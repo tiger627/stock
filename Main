@@ -1,0 +1,68 @@
+import tushare as ts
+import pandas as pd
+import numpy as np
+import datetime
+from datetime import timedelta
+import matplotlib.pyplot as plt
+from mpl_finance import candlestick_ochl
+from matplotlib.pylab import date2num
+import matplotlib as mpl
+import seaborn as sns
+from matplotlib import ticker
+#获取数据接口
+pro = ts.pro_api('9b1829f5b0a8901e73f4297d03e12db5ef6550d8b99b8d0417b8eb6f')
+#获取上市日期大于一年的股票列表
+d = timedelta(days=-365)
+curr_time = datetime.datetime.now()
+curr_time = curr_time+d
+curr_time_str = curr_time.strftime('%Y%m%d')
+df_stock_list = pro.query('stock_basic', exchange='', list_status='L', fields='ts_code,symbol,name,area,industry,list_date')
+df_stock_list_1 = df_stock_list[df_stock_list['list_date'] < curr_time_str]
+print(df_stock_list_1.head())
+
+sns.set()
+mpl.rcParams['font.family'] = 'sans-serif'
+mpl.rcParams['font.sans-serif'] = 'SimHei'
+
+
+df = pro.index_daily(ts_code='399300.SZ', start_date='20190101')
+
+df = df.sort_values(by='trade_date', ascending=True)
+df['trade_date2'] = df['trade_date'].copy()
+df['trade_date'] = pd.to_datetime(df['trade_date']).map(date2num)
+df['dates'] = np.arange(0, len(df))
+df.head()
+
+
+df['30'] = df.close.rolling(30).mean()
+df['72'] = df.close.rolling(72).mean()
+df['144'] = df.close.rolling(144).mean()
+df['250'] = df.close.rolling(250).mean()
+
+'''
+def format_date(x,pos):
+    if x<0 or x>len(date_tickers)-1:
+        return ''
+    return date_tickers[int(x)]
+date_tickers = df.trade_date2.values
+fig, ax = plt.subplots(figsize=(10, 5))
+ax.xaxis.set_major_formatter(ticker.FuncFormatter(format_date))
+#调用方法，绘制K线图
+candlestick_ochl(ax = ax,
+                 quotes=df[['dates', 'open', 'close', 'high', 'low']].values,
+                 width=0.7,
+                 colorup='red',
+                 colordown='green',
+                 alpha=0.7)
+#df['close'].rolling(window=3).mean().plot(color='red', label='3')
+#df['close'].rolling(window=5).mean().plot(color='blue', label='5')
+#df['close'].rolling(window=10).mean().plot(color='green', label='10')
+for ma in ['30', '72', '144', '250']:
+    plt.plot(df['dates'], df[ma])
+plt.legend() #绘制图例
+#设置X轴的标签
+plt.xticks(range(len(df.index.values)), df.index.values, rotation=30 )
+
+plt.title('399300')
+plt.show()
+'''
